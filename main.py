@@ -113,3 +113,4 @@ async def region_count(region: str):
     data = remove_incomplete_entries(data)
     data = remove_duplicates(data)
     return data.__len__()
+
