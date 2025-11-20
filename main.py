@@ -99,3 +99,17 @@ async def filter_tick_sightings(
         raise HTTPException(status_code=404, detail="No sightings found for given filters")
 
     return data
+
+
+@app.get("/data/tick-sightings/region_count")
+async def region_count(region: str):
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(f"https://dev-task.elancoapps.com/data/tick-sightings/city/{region}")  
+            response.raise_for_status()
+        except httpx.HTTPStatusError:
+            raise HTTPException(status_code=502, details="Failed to fetch data from third part API")
+    data = response.json()
+    data = remove_incomplete_entries(data)
+    data = remove_duplicates(data)
+    return data.__len__()
