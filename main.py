@@ -1,5 +1,5 @@
-from fastapi import FastAPI,HTTPException
-import httpx
+from fastapi import FastAPI, HTTPException
+import requests
 from datetime import datetime
 
 app = FastAPI()
@@ -26,58 +26,47 @@ def parse_date(date_str: str) -> datetime:
     except ValueError:
         raise HTTPException(status_code=400, detail=f"Invalid date format: {date_str}. Use YYYY-MM-DD or ISO format.")
 
-@app.get("/data/tick-sightings")
-async def get_tick_sightings():
-    async with httpx.AsyncClient() as client:
-        try:
-            response = await client.get("https://dev-task.elancoapps.com/data/tick-sightings")
-            response.raise_for_status()
-        except httpx.HTTPStatusError:
-            raise HTTPException(status_code=502, detail="Failed to fetch data from third-party API")
+def fetch_data(url: str):
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        return response.json()
+    except requests.HTTPError:
+        raise HTTPException(status_code=502, detail="Failed to fetch data from third-party API")
 
-    data = response.json()
+
+@app.get("/data/tick-sightings")
+def get_tick_sightings():
+    data = fetch_data("https://dev-task.elancoapps.com/data/tick-sightings")
     data = remove_incomplete_entries(data)
     data = remove_duplicates(data)
     return data
+
 
 @app.get("/data/tick-sightings/city/{location}")
-async def get_tick_sightings_by_city(location: str):
-    async with httpx.AsyncClient() as client:
-        try:
-            response = await client.get(f"https://dev-task.elancoapps.com/data/tick-sightings/city/{location}")  
-            response.raise_for_status()
-        except httpx.HTTPStatusError:
-            raise HTTPException(status_code=502, details="Failed to fetch data from third part API")
-    data = response.json()
+def get_tick_sightings_by_city(location: str):
+    data = fetch_data(f"https://dev-task.elancoapps.com/data/tick-sightings/city/{location}")
     data = remove_incomplete_entries(data)
     data = remove_duplicates(data)
     return data
-    
+
+
 @app.get("/data/tick-sightings/species/{species_name}")
-async def get_tick_sightings_by_species(species_name: str):
-    async with httpx.AsyncClient() as client:
-        try:
-            response = await client.get(f"https://dev-task.elancoapps.com/data/tick-sightings/species/{species_name}")  
-            response.raise_for_status()
-        except httpx.HTTPStatusError:
-            raise HTTPException(status_code=502, details="Failed to fetch data from third part API")
-        data = response.json()
-        data = remove_incomplete_entries(data)
-        data = remove_duplicates(data)
-        return data
+def get_tick_sightings_by_species(species_name: str):
+    data = fetch_data(f"https://dev-task.elancoapps.com/data/tick-sightings/species/{species_name}")
+    data = remove_incomplete_entries(data)
+    data = remove_duplicates(data)
+    return data
 
 
 @app.get("/data/tick-sightings/filter")
-async def filter_tick_sightings(
+def filter_tick_sightings(
     city: str = None,
     species: str = None,
     start_date: str = None,
     end_date: str = None
 ):
-    async with httpx.AsyncClient() as client:
-        response = await client.get("https://dev-task.elancoapps.com/data/tick-sightings")
-        response.raise_for_status()
-    data = response.json()
+    data = fetch_data("https://dev-task.elancoapps.com/data/tick-sightings")
 
     data = remove_incomplete_entries(data)
     data = remove_duplicates(data)
@@ -102,15 +91,8 @@ async def filter_tick_sightings(
 
 
 @app.get("/data/tick-sightings/region_count")
-async def region_count(region: str):
-    async with httpx.AsyncClient() as client:
-        try:
-            response = await client.get(f"https://dev-task.elancoapps.com/data/tick-sightings/city/{region}")  
-            response.raise_for_status()
-        except httpx.HTTPStatusError:
-            raise HTTPException(status_code=502, details="Failed to fetch data from third part API")
-    data = response.json()
+def region_count(region: str):
+    data = fetch_data(f"https://dev-task.elancoapps.com/data/tick-sightings/city/{region}")
     data = remove_incomplete_entries(data)
     data = remove_duplicates(data)
-    return data.__len__()
-
+    return len(data)
