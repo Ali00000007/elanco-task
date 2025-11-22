@@ -13,13 +13,13 @@
 
 # Architecture decisions
 - I decided to use FastAPI for its simplicity and speed
-- httpx as it supports asynchronous requests 
+- The python requests library to fetch the data, because it is lightweight, easy to use and best suited to this task 
 
 
 # How the system consumes and presents data
 
 ## Data fetching
-- Each endpoint fetches data from the API via `httpx.AsyncClient` 
+- Each endpoint fetches data from the API via the requests library
 - The data is retrieved as JSON
 
 ## Data processing 
